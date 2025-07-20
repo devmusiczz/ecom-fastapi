@@ -1,14 +1,26 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from app.database import db
 from app.models.product import Product
-from bson import ObjectId
+import random
 
 router = APIRouter()
 
+def generate_unique_numeric_id():
+    return str(random.randint(10**9, 10**10 - 1))  # 10-digit number
+
 @router.post("/products", status_code=201)
 async def create_product(product: Product):
-    result = await db.products.insert_one(product.dict())
-    return {"id": str(result.inserted_id)}
+    product_data = product.model_dump()
+
+    while True:
+        new_id = generate_unique_numeric_id()
+        exists = await db.products.find_one({"_id": new_id})
+        if not exists:
+            break
+
+    product_data["_id"] = new_id
+    await db.products.insert_one(product_data)
+    return {"id": new_id}
 
 @router.get("/products")
 async def list_products(
@@ -21,7 +33,7 @@ async def list_products(
     if name:
         query["name"] = {"$regex": name, "$options": "i"}
     if size:
-        query["size"] = size
+        query["sizes.size"] = size  # ✅ nested match
 
     cursor = db.products.find(query).skip(offset).limit(limit)
     products = []
@@ -30,4 +42,11 @@ async def list_products(
         del doc["_id"]
         products.append(doc)
 
-    return {"data": products, "page": {"next": str(offset + limit), "limit": limit, "previous": offset - limit}}
+    return {
+        "data": products,
+        "page": {
+            "next": offset + limit,
+            "limit": limit,
+            "previous": max(offset - limit, 0)
+        }
+    }
