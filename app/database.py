@@ -4,5 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-db = client["ecommerce"]  # This will create the DB if not exists
+MONGO_URL = os.getenv("MONGO_URL")
+
+# Ensure you enable TLS for Atlas
+client = AsyncIOMotorClient(MONGO_URL, tls=True)
+db = client["ecommerce"]
