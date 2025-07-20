@@ -26,7 +26,7 @@ async def create_order(order: OrderCreate):
 
 @router.get("/orders/{user_id}")
 async def get_orders(user_id: str, limit: int = 0, offset: int = 0):
-    cursor = db.orders.find({"userId": user_id}).skip(offset).limit(limit)
+    cursor = db.orders.find({"userId": user_id}).sort("_id").skip(offset).limit(limit)
     orders = []
 
     async for order in cursor:
