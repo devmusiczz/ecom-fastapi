@@ -33,7 +33,7 @@ async def get_orders(user_id: str, limit: int = 0, offset: int = 0):
         enriched_items = []
         total = 0
         for item in order["items"]:
-            product = await db.products.find_one({"_id": ObjectId(item["productId"])})
+            product = await db.products.find_one({"_id": (item["productId"])})
             if not product:
                 continue  # skip if product not found
 
